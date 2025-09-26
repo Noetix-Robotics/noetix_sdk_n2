@@ -1,0 +1,145 @@
+user:
+  init_state:
+    # target angles [rad] when action = 0.0
+    default_joint_angle:
+
+      leg_l1_joint: 0.0
+      leg_l2_joint: 0.0
+      # leg_l3_joint: -0.1495
+      # leg_l4_joint: 0.3215
+      # leg_l5_joint: -0.1720
+      leg_l3_joint: -0.3
+      leg_l4_joint: 0.6
+      leg_l5_joint: -0.0
+      leg_r1_joint: 0.0
+      leg_r2_joint: 0.0
+      # leg_r3_joint: -0.1495
+      # leg_r4_joint: 0.3215
+      # leg_r5_joint: -0.1720
+      leg_r3_joint: -0.3
+      leg_r4_joint: 0.6
+      leg_r5_joint: -0.3
+
+      arm_l1_joint: 0.0
+      arm_l2_joint: 0.3
+      arm_l3_joint: 0.0
+      arm_l4_joint: 0.0
+      arm_r1_joint: 0.0
+      arm_r2_joint: -0.0
+      arm_r3_joint: 0.0
+      arm_r4_joint: 0.0
+
+
+  control:
+    stiffness:
+      leg_l1_joint: 80
+      leg_l2_joint: 80
+      leg_l3_joint: 140
+      leg_l4_joint: 140
+      leg_l5_joint: 20
+      leg_r1_joint: 80
+      leg_r2_joint: 80
+      leg_r3_joint: 140
+      leg_r4_joint: 140
+      leg_r5_joint: 20
+
+      arm_l1_joint: 30
+      arm_l2_joint: 30
+      arm_l3_joint: 30
+      arm_l4_joint: 30
+      arm_r1_joint: 30
+      arm_r2_joint: 30
+      arm_r3_joint: 30
+      arm_r4_joint: 30
+
+    damping:
+      leg_l1_joint: 4
+      leg_l2_joint: 4
+      leg_l3_joint: 5
+      leg_l4_joint: 5
+      leg_l5_joint: 1
+      leg_r1_joint: 4
+      leg_r2_joint: 4
+      leg_r3_joint: 5
+      leg_r4_joint: 5
+      leg_r5_joint: 1
+      
+      arm_l1_joint: 2
+      arm_l2_joint: 2
+      arm_l3_joint: 1
+      arm_l4_joint: 2
+      arm_r1_joint: 2
+      arm_r2_joint: 2
+      arm_r3_joint: 1
+      arm_r4_joint: 2
+
+
+    stiffnessRun:
+      leg_l1_joint: 80
+      leg_l2_joint: 80
+      leg_l3_joint: 120
+      leg_l4_joint: 120
+      leg_l5_joint: 20
+      leg_r1_joint: 80
+      leg_r2_joint: 80
+      leg_r3_joint: 120
+      leg_r4_joint: 120
+      leg_r5_joint: 20
+
+      arm_l1_joint: 18
+      arm_l2_joint: 18
+      arm_l3_joint: 4.0
+      arm_l4_joint: 18
+      arm_r1_joint: 18
+      arm_r2_joint: 18
+      arm_r3_joint: 4.0
+      arm_r4_joint: 18
+
+    dampingRun:
+      leg_l1_joint: 4
+      leg_l2_joint: 4
+      leg_l3_joint: 5
+      leg_l4_joint: 5
+      leg_l5_joint: 1
+      leg_r1_joint: 4
+      leg_r2_joint: 4
+      leg_r3_joint: 5
+      leg_r4_joint: 5
+      leg_r5_joint: 1
+      
+      arm_l1_joint: 2
+      arm_l2_joint: 2
+      arm_l3_joint: 0.2
+      arm_l4_joint: 2
+      arm_r1_joint: 2
+      arm_r2_joint: 2
+      arm_r3_joint: 0.2
+      arm_r4_joint: 2
+
+    action_scale: 0.25
+    decimation: 5
+    cycle_time: 1.0
+
+  normalization:
+    clip_scales:
+      clip_observations: 18.0
+      clip_actions: 18.0
+    obs_scales:
+      lin_vel: 2
+      ang_vel: 1
+      dof_pos: 1
+      dof_vel: 0.05
+      quat: 1
+      height_measurements: 5.0
+
+  size:
+    actions_size: 10
+    observations_size: 40
+    actions_size_Run: 18
+    observations_size_Run: 62
+
+    stack_size: 5
+  axis_mappings:
+    scalez: 0.8
+    scalex: 1.0
+    scaley: 0.3   
