@@ -16,9 +16,7 @@
 #include <mutex>
 #include <shared_mutex>
 
-#ifdef RK3588
-#include "rknn_api.h"
-#endif
+
 using namespace org::eclipse::cyclonedds;
 
 namespace legged
@@ -29,6 +27,8 @@ class DataBuffer {
    void SetData(const T &newData){
     std::unique_lock<std::shared_mutex> lock(mutex);
     data= std::make_shared<T>(newData);
+    if(data == nullptr)
+      printf("set data failed\n");
    }
    std::shared_ptr<const T> GetData(){
     std::shared_lock<std::shared_mutex> lock(mutex);
@@ -111,7 +111,9 @@ enum class WorkMode : uint8_t
     int ThreadPriority;
 
   };
-
+  DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+  DataBuffer<joydata> joy_buffer_;
+  DataBuffer<NingImuData> imu_buffer_;
 class LowController 
 {
    
@@ -134,7 +136,6 @@ public:
     }
     bool init(ControlMode mode );
     bool loadModel(std::string modelpath);// override ;
-    bool loadrknnmodel(std::string modle_path);
     bool handleWalkMode() ;
     void setparameter(Command &cmd,bool* isfirst);
     void handleStandMode();
@@ -142,19 +143,11 @@ public:
     void handleLieMode();
     
     void process();
-    #ifdef RK3588
-    unsigned char *load_model(const char* filename,int* model_size);
-    void dump_tensor_attr(rknn_tensor_attr* attr);
-    unsigned int as_uint(const float x);
-    float as_float(const unsigned int x);
-    float  half_to_float(const unsigned short x);
-    unsigned short float_to_half(const float x);
-    #endif
+    
   protected:
    
-    void set_robotstatusdata(std::array<MotorState,18> motorstate_data,NingImuData imudata,joydata joy_data);
+    void set_robotstatusdata(const std::array<MotorState,18> &motorstate_data,NingImuData &imudata,joydata &joy_data);
     void computeActions() ;
-    void computeActionsrknn();
     void computeObservation() ;
    
 
@@ -178,7 +171,7 @@ public:
  
     Ort::MemoryInfo memoryInfo;
     std::shared_ptr<Ort::Env> onnxEnvPrt_;
-    //Controllerbase controllerbase;
+
     DDSWrapper ddswrapper;
     std::string policyFilePath_;
     std::string modelname;
@@ -259,17 +252,9 @@ public:
     std::thread send_thread_;
     int  new_state_arrived = false;
     DataBuffer<std::array<MotorCmd,18>> motor_cmd_buffer_;
-    DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
-    DataBuffer<joydata> joy_buffer_;
-    DataBuffer<NingImuData> imu_buffer_;
 
-    #ifdef RK3588
-    rknn_context ctx =0;
-    std::vector<unsigned short> inputfp16;
-    std::vector<rknn_tensor_attr> input_attrs;
-    std::vector<rknn_tensor_attr> output_attrs;
-    rknn_input_output_num io_num;
-    #endif
+
+
    
 };
 }

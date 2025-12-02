@@ -21,16 +21,7 @@
 #include "rknn_api.h"
 #endif
 using namespace org::eclipse::cyclonedds;
-#define Key1  1 //上扳机键
-#define Key2  2 // 下扳机键
-#define Key5  5 // 拇指上左
-#define Key6  6 // 拇指上右
-#define Key7  7 // 拇指下左
-#define Key8  8 // 拇指下右
-#define Key9  9 // 左侧上
-#define Key10 10 // 左侧下
-#define Key11 11 // 右侧上
-#define Key12 12 //  右侧下
+
 namespace legged
 {
 
@@ -109,6 +100,8 @@ class DataBuffer {
    void SetData(const T &newData){
     std::unique_lock<std::shared_mutex> lock(mutex);
     data= std::make_shared<T>(newData);
+    if(data == nullptr)
+      printf("set data failed\n");
    }
    std::shared_ptr<const T> GetData(){
     std::shared_lock<std::shared_mutex> lock(mutex);
@@ -122,6 +115,9 @@ class DataBuffer {
     std::shared_ptr<T> data;
     std::shared_mutex mutex;
 };
+DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+DataBuffer<joydata> joy_buffer_;
+DataBuffer<NingImuData> imu_buffer_;
 class HighController 
 {
    
@@ -137,7 +133,7 @@ public:
     }
     static HighController* instance; // 静态指针，用于调用非静态方法
 
- 
+
     bool init(ControlMode mode );
 
 
@@ -150,7 +146,7 @@ public:
     bool getmodelparam();
     bool updateStateEstimation(); 
     const std::array<MotorState,18> get_joint_state();
-    void set_axes(double  ver,double hor,int action,uint16_t index);
+    void set_axes(double  ver,double hor,int action);
     const joydata get_jsdata();
     const NingImuData get_imu_data();
     void send_thread_func();
@@ -202,7 +198,7 @@ public:
     std::mutex state_mutex;
     std::array<MotorCmd,18>  usermotorcmd;
     
-    // DataBuffer<RobotMotorCmd::MotorCmdArray> motor_cmd_buffer_;
+    DataBuffer<RobotMotorCmd::MotorCmdArray> motor_cmd_buffer_;
     // DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
     // DataBuffer<joydata> joy_buffer_;
     // DataBuffer<NingImuData> imu_buffer_;

@@ -34,23 +34,6 @@ using contact_flag_t = feet_array_t<bool>;
       USERMODE,
       DEFAULT
     };
-    enum class ControlCmd : uint8_t
-    {
-      WALK,
-      SWING,
-      SHAKE,
-      CHEER,
-      RUN,
-      DANCE,
-      START,
-      SWITCH,
-      STARTTEACH,
-      SAVETEACH,
-      ENDTEACH,
-      PLAYTEACH,
-      DEFAULT
-
-    };
     struct ControlCfg
     {
       std::map<std::string, float> stiffness;

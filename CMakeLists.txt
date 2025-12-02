@@ -55,7 +55,6 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm.*|arm|aarch64")
   target_link_libraries(lowcontrol 
   Threads::Threads 
   onnxruntime  
-  rknnrt  
   ${LIB_DIR}/aarch64/libdriver.a
   ${LIB_DIR}/aarch64/libyaml-cpp.a
   ${LIB_DIR}/aarch64/libddsc.so

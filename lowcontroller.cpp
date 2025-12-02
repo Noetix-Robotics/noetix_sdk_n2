@@ -12,146 +12,9 @@
 
 namespace legged
 {
-  //Controllerbase controllerbase;
    LowController* LowController::instance = nullptr;
-
-  #ifdef RK3588
-  unsigned char *LowController::load_model(const char* filename,int* model_size)
-  {
-     FILE* fp=fopen(filename,"rb");
-    if(fp == nullptr){
-      printf("fopen %s fail \n",filename);
-      return NULL;
-    }
-    fseek(fp,0,SEEK_END);
-    int model_len=ftell(fp);
-    unsigned char* model = (unsigned char*)malloc(model_len);
-    fseek(fp,0,SEEK_SET);
-    if(model_len != fread(model,1,model_len,fp)){
-      printf("fread %s fail \n",filename);
-      free(model);
-      return NULL;
-    }
-    *model_size = model_len;
-    if(fp)
-    {
-      fclose(fp);
-    }
-    return model;
-  }
-  void LowController::dump_tensor_attr(rknn_tensor_attr* attr)
-  {
-     std::string shape_str = attr->n_dims < 1 ? "" : std::to_string(attr->dims[0]);
-     for(int i =1;i<attr->n_dims;++i)
-     {
-       shape_str +=", "+std::to_string(attr->dims[i]);
-     }
-     printf(" index = %d ,name= %s,n_dims=%d,dims=[%s],n_elems=%d,size=%d,w_stride=%d,size_with_stride=%d,fmt=%s,"
-           "type=%s, qnt_type=%s,zp=%d,scale=%f\n",
-           attr->index,attr->name,attr->n_dims,shape_str.c_str(),attr->n_elems,attr->size,attr->w_stride,attr->size_with_stride,get_format_string(attr->fmt),get_type_string(attr->type),
-           get_qnt_type_string(attr->qnt_type),attr->zp,attr->scale);
-  }
-  unsigned int LowController::as_uint(const float x)
-  {
-    return *(unsigned int*)&x;
-  }
-  float LowController::as_float(const unsigned int x)
-  {
-    return *(float*)&x;
-  }
-  float  LowController::half_to_float(const unsigned short x)
-  {
-    const unsigned int e=(x&0x7c00)>>10;
-    const unsigned int m=(x&0x03ff)<<13;
-    const unsigned int v=as_uint((float)m)>>23;
-    return as_float((x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23 |((m<<(150-v))&0x007fe000)));
-  }
-  unsigned short LowController::float_to_half(const float x)
-  {
-    const unsigned int b = as_uint(x)+0x00001000;
-    const unsigned int e = (b&0x7f800000)>>23;
-    const unsigned int m = b&0x007fffff;
-    return (b&0x80000000)>>16 | (e>112)*((((e-112)<<10)&0x7c00)|m>>13) | ((e<113)&(e>101))*((((0x007ff000+m)>>(125-e))+1)>>1)|(e>143)*0x7fff;
-  }
-  #endif
-  bool LowController::loadrknnmodel(std::string modle_path)
-  { 
-    #ifdef RK3588
-    std::string policyFilePath;  
-    int model_data_size =0;
-    int ret = 0;
-    policyFilePath = modle_path+"/policy_user.rknn";
-    unsigned char* model_data=load_model(policyFilePath.c_str(),&model_data_size);
-    ret = rknn_init(&ctx,model_data,model_data_size,0,NULL);
-    if(ret <0)
-    {
-      printf("rknn init error %d \n",ret);
-      return 0;
-    }
-    rknn_core_mask core_mask = RKNN_NPU_CORE_0_1_2;
-    ret = rknn_set_core_mask(ctx,core_mask);
-    if(ret <0)
-    {
-      printf("rknn rknn_set_core_maskerror %d \n",ret);
-      return 0;
-    } 
-
-    rknn_sdk_version version;
-    ret = rknn_query(ctx,RKNN_QUERY_SDK_VERSION,&version,sizeof(rknn_sdk_version));
-    if(ret <0)
-    {
-      printf("rknn RKNN_QUERY_SDK_VERSION error %d \n",ret);
-      return 0;
-    }
-    printf("sdk version : %s driver version : %s\n",version.api_version,version.drv_version);
-    
-    ret = rknn_query(ctx,RKNN_QUERY_IN_OUT_NUM,&io_num,sizeof(io_num));
-    if(ret <0)
-    {
-      printf("rknn RKNN_QUERY_IN_OUT_NUM error %d \n",ret);
-      return 0;
-    }
-    printf("model input num: %d,output num: %d \n",io_num.n_input,io_num.n_output);
-    input_attrs.resize(io_num.n_input);
-    for(int i=0;i<io_num.n_input;i++){
-      input_attrs[i].index =i;
-      ret = rknn_query(ctx,RKNN_QUERY_INPUT_ATTR,&(input_attrs[i]),sizeof(rknn_tensor_attr));
-      if(ret <0)
-      {
-        printf("rknn RKNN_QUERY_INPUT_ATTR error %d \n",ret);
-        return 0;
-      }
-      printf(" input info: ");
-      dump_tensor_attr(&(input_attrs[i]));
-    }
-
-    output_attrs.resize(io_num.n_output);
-    for(int i=0;i<io_num.n_output;i++){
-      output_attrs[i].index =i;
-      ret = rknn_query(ctx,RKNN_QUERY_OUTPUT_ATTR,&(output_attrs[i]),sizeof(rknn_tensor_attr));
-      if(ret <0)
-      {
-        printf("rknn RKNN_QUERY_OUTPUT_ATTR error %d \n",ret);
-        return -1;
-      }
-      printf(" output info: ");
-      dump_tensor_attr(&(output_attrs[i]));
-    }
-    
-    modelname="user";
-    command_.resize(3);
-    isfirstCompAct_ = true;
-    isfirstRecObs_= NULL;
-    
-    model_type =1;
-    ret = getmodelparam();
-    inputfp16.resize(observationSize_ * stackSize_);
-    std::fill(inputfp16.begin(), inputfp16.end(), 0);
-    initfinish = 1;
-    #endif
-    return true;
-    
-  }
+ 
+ 
   bool LowController::init(ControlMode mode)
   {
     char buf[256];
@@ -177,7 +40,10 @@ namespace legged
     instance = this;
     
     RobotSetMode::SetMode cmode;
-    cmode.mode(1);
+    if(mode == ControlMode::LOWMODE )
+      cmode.mode(2);
+    else if(mode == ControlMode::HIGHMODE )
+      cmode.mode(1);
     ddswrapper.publishModeData(cmode);
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
       std::array<MotorState,18>   data;
@@ -192,9 +58,7 @@ namespace legged
           data[i].motor_id = state.motor_id();
           data[i].error = state.error();
           data[i].temperature = state.temperature();
-    
-          //std::cout<< "motorstate  id: "<< motorstate_[i].motor_id<<";pos " << motorstate_[i].pos << ";vel " << motorstate_[i].vel
-          //<< ";tau "<<motorstate_[i].tau<<";error " <<motorstate_[i].error<<";temperature "<<motorstate_[i].temperature<<std::endl;
+
           i++;
         }
         for(int i=0;i<4;i++)
@@ -212,9 +76,10 @@ namespace legged
           imudata.angular_vel_cov[i] = ddsdata.imudata().angular_vel_cov()[i];
           imudata.linear_acc_cov[i] = ddsdata.imudata().linear_acc_cov()[i];
         }
+
           memcpy(remote_data.button,&ddsdata.joydata().button(),sizeof(remote_data.button));
           memcpy(remote_data.axes,&ddsdata.joydata().axes(),sizeof(remote_data.axes));
-           
+     
               
       LowController::Instance()->set_robotstatusdata(data,imudata,remote_data);
     });   
@@ -236,11 +101,13 @@ namespace legged
     }
     return true;
   }
-  void LowController::set_robotstatusdata( std::array<MotorState,18>   data,NingImuData imudata,joydata joy_data)
+  void LowController::set_robotstatusdata( const std::array<MotorState,18>   &data,NingImuData &imudata,joydata &joy_data)
   {
+
     motor_state_buffer_.SetData(data);
     imu_buffer_.SetData(imudata);
     joy_buffer_.SetData(joy_data);
+
   
   }
   void LowController::send_thread_func()
@@ -353,8 +220,8 @@ namespace legged
         jointTornoarm(j) = joint_state[i].tau ;
         if(abs(jointPosnoarm(j)) == 12.5)
         {
-          //LogError(" {} disconnect",jointNames[i]);
-          //return false;
+          //printf(" %s disconnect",jointNames[i]);
+          return false;
         }
         j++;
       }
@@ -365,9 +232,9 @@ namespace legged
         jointTornoarm(j) = joint_state[i].tau  ;
         if(abs(jointPosnoarm(j)) == 12.5)
         {
-          
-          //LogError(" {} disconnect",jointNames[i]);
-          //return false;
+         
+          //printf(" %s disconnect",jointNames[i]);
+          return false;
           
         }
         j++;
@@ -394,7 +261,7 @@ namespace legged
         imudata.linear_acc_cov[i] = (*idata).linear_acc_cov[i];
       }
     
-    //imudata = get_imu_data();
+
       for (size_t i = 0; i < 4; ++i)
       {
         quat.coeffs()(i) = imudata.ori[i];
@@ -425,7 +292,7 @@ namespace legged
   }
   void LowController::handleDefautMode()
   {
-    //MotorCmd  motorcmd;
+
     std::array<MotorCmd,18> motorcmd;
     for (int j = 0; j < 18; j++)
     {
@@ -436,7 +303,6 @@ namespace legged
       motorcmd[j].vel =0;
       motorcmd[j].tau = 0;
 
-      //controllerbase.set_joint(motorcmd);
       
     }
  
@@ -445,7 +311,7 @@ namespace legged
   }
   void LowController::handleStandMode()
   {
-    //MotorCmd motorcmd;
+
     std::array<MotorCmd,18> motorcmd;
     if (standPercent <= 1)
     {
@@ -460,9 +326,7 @@ namespace legged
           motorcmd[j].motor_id = j;
           motorcmd[j].vel =0;
           motorcmd[j].tau = 0;
-          
-          //controllerbase.set_joint(motorcmd);
-          //set_joint(motorcmd);
+
         }
         else if((j > 4) && (j<9)){
           
@@ -472,9 +336,7 @@ namespace legged
           motorcmd[j].motor_id =j;
           motorcmd[j].vel =0;
           motorcmd[j].tau = 0;
-          
-          //controllerbase.set_joint(motorcmd);
-          //set_joint(motorcmd);
+
         }
         else if((j > 9) && (j<13)){
 
@@ -484,9 +346,7 @@ namespace legged
           motorcmd[j].motor_id = j;
           motorcmd[j].vel =0;
           motorcmd[j].tau = 0;
-          
-          //controllerbase.set_joint(motorcmd);
-          //set_joint(motorcmd);
+
           
         }
         else{
@@ -497,9 +357,7 @@ namespace legged
           motorcmd[j].motor_id = j;
           motorcmd[j].vel =0;
           motorcmd[j].tau = 0;
-          
-          //controllerbase.set_joint(motorcmd);
-          //set_joint(motorcmd);
+
         }
       }
       set_joint(motorcmd);
@@ -510,20 +368,12 @@ namespace legged
   }
   void LowController::handleLieMode()
   {
-    //MotorCmd motorcmd;
+
     std::array<MotorCmd,18> motorcmd;
 
     const std::shared_ptr<const std::array<MotorState,18>> ms =motor_state_buffer_.GetData();
     if(ms)
     {
-      for(int i=0;i<18;i++)
-      {
-        if(abs(ms->at(i).pos) == 12.5)
-        {
-          //printf("joint %d disconnect\n",i);
-          //return;
-        }
-      }
       if (standPercent <= 1)
       {
         for (int j = 0; j < 18; j++)
@@ -586,8 +436,10 @@ namespace legged
     long starttimestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
     const std::shared_ptr<const std::array<MotorState,18>> ms =motor_state_buffer_.GetData();
+
     if(ms)
     {
+
       const std::shared_ptr<const joydata> jdata =joy_buffer_.GetData();
       if(jdata)
       {
@@ -596,7 +448,7 @@ namespace legged
         cmd.x =remote_data.axes[1];
         cmd.y=0;
         cmd.yaw =remote_data.axes[0];
-     
+
         if((remote_data.button[9] == 1)&&(keyflag[9] == 0))
         {  
           
@@ -701,10 +553,8 @@ namespace legged
     {
       count = 0;
       computeObservation();
-      if(model_type == 0)
-        computeActions();
-      if(model_type == 1)
-        computeActionsrknn();
+      computeActions();
+
       // limit action range
       scalar_t actionMin = -robotconfig.clipActions;
       scalar_t actionMax = robotconfig.clipActions;
@@ -714,7 +564,7 @@ namespace legged
     }
     // set action
     int j =0;
-   // MotorCmd motorcmd;
+
     std::array<MotorCmd,18> motorcmd;
     for (int i = 0; i < actionsSize_; i++)
     {
@@ -746,7 +596,7 @@ namespace legged
         j = i+5;
       std::string partName = jointNames[j];
       scalar_t pos_des;    
-      // std::array<MotorState,18> joint_state = controllerbase.get_joint_state();
+
       const std::shared_ptr<const std::array<MotorState,18>> ms =motor_state_buffer_.GetData();
       if(ms)
       {
@@ -774,13 +624,13 @@ namespace legged
   void LowController::onnxdatainit()
   {
     Ort::AllocatorWithDefaultOptions allocator;
-   // ROS_INFO_STREAM("count: " << poliycfg->policySessionPtr->GetOutputCount());
+
     for (int i = 0; i < policySessionPtr->GetInputCount(); i++)
     {
       auto policyInputnamePtr = policySessionPtr->GetInputNameAllocated(i, allocator);
       policyInputNodeNameAllocatedStrings.push_back(std::move(policyInputnamePtr));
       policyInputNames_.push_back(policyInputNodeNameAllocatedStrings.back().get());
-      // inputNames_.push_back(sessionPtr_->GetInputNameAllocated(i, allocator).get());
+
       policyInputShapes_.push_back(policySessionPtr->GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
       std::vector<int64_t> policyShape = policySessionPtr->GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape();
       std::cerr << "Policy Shape: [";
@@ -800,7 +650,7 @@ namespace legged
       auto policyOutputnamePtr = policySessionPtr->GetOutputNameAllocated(i, allocator);
       policyOutputNodeNameAllocatedStrings.push_back(std::move(policyOutputnamePtr));
       policyOutputNames_.push_back(policyOutputNodeNameAllocatedStrings.back().get());
-      // outputNames_.push_back(sessionPtr_->GetOutputNameAllocated(i, allocator).get());
+
       std::cout << policySessionPtr->GetOutputNameAllocated(i, allocator).get() << std::endl;
       policyOutputShapes_.push_back(policySessionPtr->GetOutputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
       std::vector<int64_t> policyShape = policySessionPtr->GetOutputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape();
@@ -978,68 +828,7 @@ namespace legged
     return true;
   }
 
-  void LowController::computeActionsrknn()
-  { 
-    #ifdef RK3588
-    rknn_input inputs[1];
-    int ret;
-    float* outdata=NULL;
-    float* inputdata=NULL;
-        
-    inputdata =(float*)policyObservations_.data();
-    //std::cout<<"policyObservations_.size() "<<policyObservations_.size()<< std::endl;
-    for(int i=0;i<policyObservations_.size();i++)
-    {
-       inputfp16[i]=float_to_half(inputdata[i]);
-    }
-    memset(inputs,0,sizeof(inputs));
-    inputs[0].index= input_attrs[0].index;
-    inputs[0].type= input_attrs[0].type;
-    inputs[0].size= input_attrs[0].size;
-    inputs[0].fmt= input_attrs[0].fmt;
-    inputs[0].pass_through= 0;
-    inputs[0].buf = inputfp16.data();
-
-    ret=rknn_inputs_set(ctx,1,inputs);
-
-    ret=rknn_run(ctx,NULL);
-
-    if(ret != 0)
-    {
-      printf("rknn run failed\n");
-    }
-    rknn_output outputs[io_num.n_output];
-    memset(outputs,0,sizeof(outputs));
-    for(int i=0;i<io_num.n_output;i++)
-    {
-      outputs[i].index = i;
-      outputs[i].is_prealloc =0;
-      outputs[i].want_float =1;
-    }
-    ret=rknn_outputs_get(ctx,io_num.n_output,outputs,NULL);
-    //printf("output buf size is %d,n_elems %d\n",outputs[0].size,output_attrs[0].n_elems);
-    outdata = (float*)outputs[0].buf;
-     if (isfirstCompAct_){
-      printf("rknn@@@@@@@@@@@@@@@@\n");
-      for (int i = 0; i < policyObservations_.size(); ++i) {
-        std::cout << policyObservations_[i] << " ";
-        if ((i + 1) % observationSize_ == 0) {
-            std::cout << std::endl;
-        }
-      }
-      isfirstCompAct_ = false;
-    }
-   
-    for(int i=0;i<output_attrs[0].n_elems;i++)
-    {
-       actions_[i] = outdata[i];
-       //actions_[i] = half_to_float(outdata[i]);
-        //std::cout<<"rknn actions "<<actions_[i]<< std::endl;
-    }
-    //printf("###############################################\n");*/
-    ret = rknn_outputs_release(ctx,io_num.n_output,outputs);
-    #endif
-  }
+ 
   void LowController::computeActions()
   {
     std::vector<Ort::Value> policyInputValues;
@@ -1130,8 +919,7 @@ namespace legged
 
     for (size_t i = 0; i < (observationSize_ * stackSize_); i++){
       policyObservations_[i] = static_cast<tensor_element_t>(proprioHistoryBuffer_[i]);
-      // if(i < observationSize_)
-      // std::cout << i << "obs:::" << estObservations_[i] << std::endl;
+
     }
     // Limit observation range
     scalar_t obsMin = -robotconfig.clipObs;
@@ -1158,11 +946,8 @@ int main()
   printf("cur path is %s\n",path.c_str());
   legged::LowController lowcontroller;
   lowcontroller.init(legged::ControlMode::LOWMODE);
-  #ifdef RK3588
-  lowcontroller.loadrknnmodel(path+"/policy");      
-  #else
   lowcontroller.loadModel(path+"/policy");  
-  #endif
+ 
   while(1)
   {
     usleep(10);
