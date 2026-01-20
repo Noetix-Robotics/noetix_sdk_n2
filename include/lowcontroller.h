@@ -258,10 +258,10 @@ public:
     std::thread process_thread_;
     std::thread send_thread_;
     int  new_state_arrived = false;
-    DataBuffer<std::array<MotorCmd,18>> motor_cmd_buffer_;
-    DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
-    DataBuffer<joydata> joy_buffer_;
-    DataBuffer<NingImuData> imu_buffer_;
+    //DataBuffer<std::array<MotorCmd,18>> motor_cmd_buffer_;
+    //DataBuffer<std::array<MotorState,18>> motor_state_buffer_;
+    //DataBuffer<joydata> joy_buffer_;
+    //DataBuffer<NingImuData> imu_buffer_;
 
     #ifdef RK3588
     rknn_context ctx =0;

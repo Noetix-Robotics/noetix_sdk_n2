@@ -2,6 +2,7 @@
 //#include "controllerbase.h"
 #include "RotationTools.h"
 #include <algorithm>
+#include "common.h"
 #include "yaml-cpp/yaml.h"
 #include <iostream>
 #include <chrono>
@@ -34,7 +35,11 @@ namespace legged
     instance = this;
     remotedriver.init("/dev/input/js0",115200);
     RobotSetMode::SetMode cmode;
-    cmode.mode(1);
+    if (mode == ControlMode::HIGHMODE) {
+      cmode.mode(1);
+    } else if (mode == ControlMode::LOWMODE) {
+      cmode.mode(2);
+    }
     ddswrapper.publishModeData(cmode);
     
     ddswrapper.subscribeRobotStatus([] (const  RobotStatus::StatusData& ddsdata){
@@ -309,6 +314,7 @@ namespace legged
     {
       action = ControlCmd::STARTTEACH;
       key_inuse[Key5] = 1;
+      printf("STARTTEACH \n");
     }
     else if((key_updown[Key6] == 1) && key_updown[Key2]== 0 && (key_inuse[Key6]==0))
     {
@@ -317,15 +323,16 @@ namespace legged
     }
     else if((key_updown[Key7] == 1) && key_updown[Key2]== 0 && (key_inuse[Key7]==0))
     {
-       action = ControlCmd::SHAKE;
-       key_inuse[Key7] = 1;
+      action = ControlCmd::SAVETEACH;
+      key_inuse[Key6] = 1;
+      fileindex++;
+      printf("SAVETEACH \n");
     }
     else if((key_updown[Key8] == 1)  && key_updown[Key2]== 0  && (key_inuse[Key8]==0))
     {
       action = ControlCmd::CHEER;
       key_inuse[Key8] =1; 
     }
-      
     else if((key_updown[Key9] == 1) && (key_inuse[Key9]==0))
     {
       key_inuse[Key9] = 1;
@@ -365,10 +372,10 @@ namespace legged
     }
     else if(key_updown[Key2]== 1  && key_updown[Key8] ==1 &&(key_inuse[Key8] == 0))
     {
-      action = ControlCmd::DANCE;
+      action = ControlCmd::PLAYTEACH;
       key_inuse[Key8] = 1;
-      longd =1;
-      printf("DANCE \n");
+      fileindex =1;
+      printf("PLAYTEACH \n");
     }
     
     set_axes(cmd.x ,cmd.yaw,(int)action,fileindex);
@@ -391,7 +398,7 @@ int main()
   bool ret = true;
   getcwd(buf,sizeof(buf)); 
   std::string path=std::string(buf);
-  std::string ddsxml = "file://"+path+"/config/dds_local.xml";
+  std::string ddsxml = "file://"+path+"/config/dds.xml";
   setenv("CYCLONEDDS_URI",ddsxml.c_str(),1);
   printf("cur path is %s\n",path.c_str());
   legged::HighController highcontroller;

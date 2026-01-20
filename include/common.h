@@ -31,7 +31,6 @@ using contact_flag_t = feet_array_t<bool>;
     {
       LOWMODE,
       HIGHMODE,
-      USERMODE,
       DEFAULT
     };
     enum class ControlCmd : uint8_t
