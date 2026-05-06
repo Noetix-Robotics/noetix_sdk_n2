@@ -9,6 +9,7 @@
 #include <atomic>
 
 #include "Robot_motorcmd.hpp"
+#include "Robot_controlcmd.hpp"
 #include "Robot_status.hpp"
 #include "Robot_setmode.hpp"
 namespace legged
@@ -20,6 +21,7 @@ namespace legged
         DDSWrapper(int domain_id = 0);
         ~DDSWrapper();
          void publishMotorCmdData(const RobotMotorCmd::MotorCmdArray&  state);
+         void publishControlCmdData(const RobotControlCmd::ControlCmd&  cmd);
         void publishModeData(const RobotSetMode::SetMode& data);
         
         void subscribeRobotStatus(RobotStatusCallback callback);
@@ -44,7 +46,10 @@ namespace legged
         dds::topic::Topic<RobotMotorCmd::MotorCmdArray> motorcmd_topic_;
         dds::pub::DataWriter<RobotMotorCmd::MotorCmdArray> motorcmd_writer_;
 
-        
+        //controlcmd
+        dds::topic::Topic<RobotControlCmd::ControlCmd> controlcmd_topic_;
+        dds::pub::DataWriter<RobotControlCmd::ControlCmd> controlcmd_writer_;
+
         //setmode
         dds::topic::Topic<RobotSetMode::SetMode> mode_topic_;
         dds::pub::DataWriter<RobotSetMode::SetMode> mode_writer_;
@@ -54,6 +59,7 @@ namespace legged
         dds::sub::qos::DataReaderQos getRobotStatusQos();
 
         dds::pub::qos::DataWriterQos getMotorCmdQos();
+        dds::pub::qos::DataWriterQos getControlCmdQos();
         dds::pub::qos::DataWriterQos getModeQos();
         void init();
         void robotstatusListener();

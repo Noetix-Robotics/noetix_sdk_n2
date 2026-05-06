@@ -1,4 +1,8 @@
 #!/bin/bash
+if [ "$1" = "clean" ]; then
+    rm -rf build example_low example_high
+    exit 0
+fi
 get_arch=$(uname -m)
 case $get_arch in
     "x86_64")
@@ -9,17 +13,16 @@ case $get_arch in
         arch=arm64;;
     *)
     echo "unknown!!"
+    exit 1
 esac
-mkdir build
+
+mkdir -p build
 cd build
+
 if [ $arch = "arm64" ];then
-    cmake -DRK3588=ON ..
+    cmake ..
 else
     cmake ..
 fi
-make -j4
-cd ..
-rm -rf build
-chmod +x highcontrol
-chmod +x lowcontrol
 
+make -j4
