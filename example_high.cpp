@@ -1,5 +1,6 @@
 #include "common.h"
 #include "highcontroller.h"
+
 using namespace legged;
 
 int main(int argc, char *argv[]) {

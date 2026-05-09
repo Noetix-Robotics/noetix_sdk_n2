@@ -1,16 +1,11 @@
 #include "highcontroller.h"
-#include "aolion_driver.h"
-#include <chrono>
-#include <common.h>
-#include <stdio.h>
-#include <unistd.h>
+
 using namespace org::eclipse::cyclonedds;
 
 namespace legged {
 DataBuffer<std::array<MotorState, 18>> motor_state_buffer_;
 DataBuffer<joydata> joy_buffer_;
 DataBuffer<NingImuData> imu_buffer_;
-AoLionDriver remotedriver;
 bool HighController::init() {
         char buf[256];
         getcwd(buf, sizeof(buf));

@@ -1,15 +1,7 @@
+#include "RotationTools.h"
 #include "lowcontroller.h"
 #include "yaml-cpp/yaml.h"
-#include <algorithm>
-#include <array>
-#include <chrono>
-#include <common.h>
-#include <iostream>
 #include <onnxruntime/onnxruntime_cxx_api.h>
-#include <stdio.h>
-#include <thread>
-#include "RotationTools.h"
-#include <unistd.h>
 
 using namespace legged;
 
