@@ -2,9 +2,9 @@
 Noetix robot N2 sdk.
 
 ### Prebuild environment
-* OS  (Ubuntu 20.04 LTS)  
+* OS  (Ubuntu 22.04 LTS)  
 * CPU  (aarch64 or x86_64)   
-* Compiler  (gcc version 9.4.0) 
+* Compiler  (gcc version 11.4.0) 
 
 ### Environment Setup
 
@@ -17,7 +17,7 @@ Before building or running the SDK, you can read the documentation linked here t
 To build the examples inside this repository:
 
 ```bash
-./build_release.sh
+./build.sh
 ```
 
 ### Notice
