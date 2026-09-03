@@ -90,6 +90,14 @@ PYBIND11_MODULE(highcontrol_py, m) {
             .def_readwrite("error", &MotorState::error)
             .def_readwrite("temperature", &MotorState::temperature);
 
+        // RobotHardwareStatus
+        py::class_<RobotHardwareStatus>(m, "RobotHardwareStatus")
+            .def(py::init<>())
+            .def_readonly("imu_data", &RobotHardwareStatus::imu_data)
+            .def_readonly("remote_data", &RobotHardwareStatus::remote_data)
+            .def_readonly("motor_data", &RobotHardwareStatus::motor_data)
+            .def_readonly("workmode", &RobotHardwareStatus::workmode);
+
         py::class_<HighController>(m, "HighController")
             .def_static("instance", &HighController::Instance,
                         py::return_value_policy::reference)
