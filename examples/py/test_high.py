@@ -50,12 +50,6 @@ while True:
         sleep(0.01)
         continue
 
-    curmode = ctrl.get_mode()
-    if curmode != lasmode:
-        lasmode = curmode
-        print(f"[PYTHON DEBUG]: curmode is {curmode}")
-    remote_data = ctrl.from_dds_get_joydata()
-
     axes = remote_data.axes
     buttons = remote_data.button
 
