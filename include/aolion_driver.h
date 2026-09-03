@@ -60,7 +60,7 @@
 #define key10 0xa
 #define key11 0x6
 #define key12 0xb
-namespace legged {
+namespace noetix {
 
 typedef struct {
         uint8_t up;
@@ -142,4 +142,4 @@ class AoLionDriver {
         std::thread serialread_thread_;
 };
 
-} // namespace legged
+} // namespace noetix

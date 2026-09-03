@@ -1,112 +1,27 @@
 #ifndef LowController_H
 #define LowController_H
-
-#include "DDSWrapper.h"
 #include "common.h"
-#include <shared_mutex>
 
-using namespace org::eclipse::cyclonedds;
+namespace noetix {
 
-namespace legged {
-template <typename T> class DataBuffer {
-      public:
-        void SetData(const T &newData) {
-                std::unique_lock<std::shared_mutex> lock(mutex);
-                data = std::make_shared<T>(newData);
-        }
-        std::shared_ptr<const T> GetData() {
-                std::shared_lock<std::shared_mutex> lock(mutex);
-                return data ? data : nullptr;
-        }
-        void Clear() {
-                std::unique_lock<std::shared_mutex> lock(mutex);
-                data = nullptr;
-        }
-
-      private:
-        std::shared_ptr<T> data;
-        std::shared_mutex mutex;
-};
-enum class WorkMode : uint8_t { STAND, LIE, USERWALK, DEFAULT };
-
-struct RobotCfg {
-        struct ControlCfg {
-                std::map<std::string, float> stiffness;
-                std::map<std::string, float> damping;
-                float actionScale;
-                int decimation;
-                float user_torque_limit;
-                float user_power_limit;
-                float cycle_time;
-        };
-
-        struct InitState {
-                // default joint angles
-                scalar_t arm_l1_joint;
-                scalar_t arm_l2_joint;
-                scalar_t arm_l3_joint;
-                scalar_t arm_l4_joint;
-                scalar_t leg_l1_joint;
-                scalar_t leg_l2_joint;
-                scalar_t leg_l3_joint;
-                scalar_t leg_l4_joint;
-                scalar_t leg_l5_joint;
-                scalar_t arm_r1_joint;
-                scalar_t arm_r2_joint;
-                scalar_t arm_r3_joint;
-                scalar_t arm_r4_joint;
-                scalar_t leg_r1_joint;
-                scalar_t leg_r2_joint;
-                scalar_t leg_r3_joint;
-                scalar_t leg_r4_joint;
-                scalar_t leg_r5_joint;
-        };
-
-        struct ObsScales {
-                scalar_t linVel;
-                scalar_t angVel;
-                scalar_t dofPos;
-                scalar_t dofVel;
-                scalar_t quat;
-                scalar_t heightMeasurements;
-        };
-
-        bool encoder_nomalize;
-
-        scalar_t clipActions;
-        scalar_t clipObs;
-
-        InitState initState;
-        ObsScales obsScales;
-        ControlCfg controlCfg;
-
-        int loophz;
-        double cycletimeerrorThreshold;
-        int ThreadPriority;
-};
+class DDSWrapper;
 
 class LowController {
       public:
-        ~LowController() = default;
-        static LowController *Instance() {
-                static LowController lowcontrol;
-                return &lowcontrol;
-        }
+        ~LowController();
+        static LowController *Instance();
         bool init();
-        const std::array<MotorState, 18> get_joint_state();
+
         void set_joint(std::array<MotorCmd, 18> motorcmd);
-        const NingImuData get_imu_data();
-        joydata from_dds_get_joydata();
+
+        void
+        subscribe_robot_hardware_status(RobotHardwareStatusCallback callback);
 
       protected:
-        void set_robotstatusdata(std::array<MotorState, 18> motorstate_data,
-                                 NingImuData imudata, joydata joy_data);
         void send_thread_func();
 
       private:
-        DDSWrapper ddswrapper;
-
-        std::thread send_thread_;
+        std::unique_ptr<DDSWrapper> ddswrapper;
 };
-} // namespace legged
+} // namespace noetix
 #endif

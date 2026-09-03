@@ -3,14 +3,15 @@
 
 // #include <Eigen/Core>
 // #include <Eigen/Dense>
-#include <atomic>
-#include <chrono>
 #include <eigen3/Eigen/Dense>
 #include <map>
-#include <string>
+#include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <thread>
-#include <vector>
-namespace legged {
+namespace noetix {
+#define SDK_VERSION "3.0.0"
+
 using scalar_t = double;
 using vector_t = Eigen::Matrix<scalar_t, Eigen::Dynamic, 1>;
 using matrix_t = Eigen::Matrix<scalar_t, Eigen::Dynamic, Eigen::Dynamic>;
@@ -172,7 +173,93 @@ struct joydata {
         int button[14];
 };
 
-} // namespace legged
+struct RobotCfg {
+        struct ControlCfg {
+                std::map<std::string, float> stiffness;
+                std::map<std::string, float> damping;
+                float actionScale;
+                int decimation;
+                float user_torque_limit;
+                float user_power_limit;
+                float cycle_time;
+        };
+
+        struct InitState {
+                // default joint angles
+                scalar_t arm_l1_joint;
+                scalar_t arm_l2_joint;
+                scalar_t arm_l3_joint;
+                scalar_t arm_l4_joint;
+                scalar_t leg_l1_joint;
+                scalar_t leg_l2_joint;
+                scalar_t leg_l3_joint;
+                scalar_t leg_l4_joint;
+                scalar_t leg_l5_joint;
+                scalar_t arm_r1_joint;
+                scalar_t arm_r2_joint;
+                scalar_t arm_r3_joint;
+                scalar_t arm_r4_joint;
+                scalar_t leg_r1_joint;
+                scalar_t leg_r2_joint;
+                scalar_t leg_r3_joint;
+                scalar_t leg_r4_joint;
+                scalar_t leg_r5_joint;
+        };
+
+        struct ObsScales {
+                scalar_t linVel;
+                scalar_t angVel;
+                scalar_t dofPos;
+                scalar_t dofVel;
+                scalar_t quat;
+                scalar_t heightMeasurements;
+        };
+
+        bool encoder_nomalize;
+
+        scalar_t clipActions;
+        scalar_t clipObs;
+
+        InitState initState;
+        ObsScales obsScales;
+        ControlCfg controlCfg;
+
+        int loophz;
+        double cycletimeerrorThreshold;
+        int ThreadPriority;
+};
+
+template <typename T> class DataBuffer {
+      public:
+        void SetData(const T &newData) {
+                std::unique_lock<std::shared_mutex> lock(mutex);
+                data = std::make_shared<T>(newData);
+        }
+        std::shared_ptr<const T> GetData() {
+                std::shared_lock<std::shared_mutex> lock(mutex);
+                return data ? data : nullptr;
+        }
+        void Clear() {
+                std::unique_lock<std::shared_mutex> lock(mutex);
+                data = nullptr;
+        }
+
+      private:
+        std::shared_ptr<T> data;
+        std::shared_mutex mutex;
+};
+
+struct RobotHardwareStatus {
+        NingImuData imu_data;
+        joydata remote_data;
+        std::array<MotorState, 18> motor_data;
+        int workmode;
+};
+
+using RobotHardwareStatusCallback =
+    std::function<void(const RobotHardwareStatus &)>;
+
+} // namespace noetix
 #define sleep_ms(x) std::this_thread::sleep_for(std::chrono::milliseconds(x))
 #define sleep_us(x) std::this_thread::sleep_for(std::chrono::microseconds(x))
 #define get_time_us()                                                          \
